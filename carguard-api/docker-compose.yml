@@ -1,0 +1,53 @@
+version: "3.9"
+
+services:
+
+  # ── PostgreSQL Database ───────────────────────────────
+  db:
+    image: postgres:16-alpine
+    container_name: carguard_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB:       carguard_db
+      POSTGRES_USER:     carguard
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U carguard"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # ── FastAPI Backend ───────────────────────────────────
+  api:
+    build: .
+    container_name: carguard_api
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL:          postgresql+asyncpg://carguard:password@db:5432/carguard_db
+      DATABASE_URL_SYNC:     postgresql://carguard:password@db:5432/carguard_db
+      APP_ENV:               development
+      DEBUG:                 "true"
+      SECRET_KEY:            change-me-in-production-use-long-random-string
+      JWT_SECRET_KEY:        change-me-in-production-use-long-random-string
+      FIREBASE_SERVICE_ACCOUNT_PATH: /app/firebase-service-account.json
+      AWS_ACCESS_KEY_ID:     ${AWS_ACCESS_KEY_ID:-}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-}
+      AWS_REGION:            us-east-1
+      AWS_S3_BUCKET:         carguard-video-storage
+      ESP32_IP:              ${ESP32_IP:-192.168.1.42}
+      ESP32_API_KEY:         ${ESP32_API_KEY:-changeme}
+      ALLOWED_ORIGINS:       "http://localhost:3000,http://localhost:8080"
+    volumes:
+      - ./firebase-service-account.json:/app/firebase-service-account.json:ro
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
