@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../theme/app_theme.dart';
 import '../providers/providers.dart';
 import '../providers/auth_provider.dart';
+import '../services/api_service.dart';
 import '../widgets/section_header.dart';
 
 class ConfigScreen extends ConsumerWidget {
@@ -31,8 +32,8 @@ class ConfigScreen extends ConsumerWidget {
                         fontWeight: FontWeight.w800, letterSpacing: -0.3,
                       ),
                       children: [
-                        TextSpan(text: 'DEVICE ', color: AppTheme.textColor),
-                        TextSpan(text: 'CONFIG', color: AppTheme.accentColor),
+                        TextSpan(text: 'DEVICE ', style: TextStyle(color: AppTheme.textColor)),
+                        TextSpan(text: 'CONFIG', style: TextStyle(color: AppTheme.accentColor)),
                       ],
                     ),
                   ),
@@ -41,9 +42,9 @@ class ConfigScreen extends ConsumerWidget {
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                       decoration: BoxDecoration(
-                        color: AppTheme.redColor.withOpacity(0.1),
+                        color: AppTheme.redColor.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: AppTheme.redColor.withOpacity(0.3)),
+                        border: Border.all(color: AppTheme.redColor.withValues(alpha: 0.3)),
                       ),
                       child: const Text('SIGN OUT', style: TextStyle(
                         fontFamily: 'Syne', fontSize: 10,
@@ -68,26 +69,26 @@ class ConfigScreen extends ConsumerWidget {
                         desc: 'ESP32-CAM capture quality',
                         value: settings['resolution'] ?? '1080p',
                         options: const ['480p', '720p', '1080p'],
-                        onChanged: (v) => ref.read(settingsProvider.notifier).update('resolution', v),
+                        onChanged: (v) => ref.read(settingsProvider.notifier).updateSetting('resolution', v),
                       ),
                       _SelectRow(
                         icon: '⚡', label: 'Frame Rate',
                         desc: 'WebRTC stream FPS',
                         value: '${settings['fps'] ?? 30} FPS',
                         options: const ['10 FPS', '15 FPS', '30 FPS'],
-                        onChanged: (v) => ref.read(settingsProvider.notifier).update('fps', int.parse(v.split(' ')[0])),
+                        onChanged: (v) => ref.read(settingsProvider.notifier).updateSetting('fps', int.parse(v.split(' ')[0])),
                       ),
                       _ToggleRow(
                         icon: '🌙', label: 'Night Vision (IR LED)',
                         desc: 'Auto-activate in low light',
                         value: settings['night_vision'] ?? true,
-                        onChanged: (v) => ref.read(settingsProvider.notifier).update('night_vision', v),
+                        onChanged: (v) => ref.read(settingsProvider.notifier).updateSetting('night_vision', v),
                       ),
                       _ToggleRow(
                         icon: '🔁', label: 'WebRTC P2P Stream',
                         desc: 'STUN/TURN NAT traversal enabled',
                         value: settings['webrtc_enabled'] ?? true,
-                        onChanged: (v) => ref.read(settingsProvider.notifier).update('webrtc_enabled', v),
+                        onChanged: (v) => ref.read(settingsProvider.notifier).updateSetting('webrtc_enabled', v),
                       ),
                     ]),
 
@@ -98,25 +99,25 @@ class ConfigScreen extends ConsumerWidget {
                         icon: '🏃', label: 'Motion Alerts',
                         desc: 'PIR sensor push via Firebase FCM',
                         value: settings['alert_motion'] ?? true,
-                        onChanged: (v) => ref.read(settingsProvider.notifier).update('alert_motion', v),
+                        onChanged: (v) => ref.read(settingsProvider.notifier).updateSetting('alert_motion', v),
                       ),
                       _ToggleRow(
                         icon: '💥', label: 'Impact / Vibration',
                         desc: 'MPU-6050 · threshold: 0.5g',
                         value: settings['alert_impact'] ?? true,
-                        onChanged: (v) => ref.read(settingsProvider.notifier).update('alert_impact', v),
+                        onChanged: (v) => ref.read(settingsProvider.notifier).updateSetting('alert_impact', v),
                       ),
                       _ToggleRow(
                         icon: '🔊', label: 'Sound Detection',
                         desc: 'Microphone noise level alert',
                         value: settings['alert_sound'] ?? false,
-                        onChanged: (v) => ref.read(settingsProvider.notifier).update('alert_sound', v),
+                        onChanged: (v) => ref.read(settingsProvider.notifier).updateSetting('alert_sound', v),
                       ),
                       _ToggleRow(
                         icon: '📏', label: 'Proximity Alert',
                         desc: 'HC-SR04 ultrasonic · threshold: 1.5m',
                         value: settings['alert_proximity'] ?? true,
-                        onChanged: (v) => ref.read(settingsProvider.notifier).update('alert_proximity', v),
+                        onChanged: (v) => ref.read(settingsProvider.notifier).updateSetting('alert_proximity', v),
                       ),
                     ]),
 
@@ -127,33 +128,33 @@ class ConfigScreen extends ConsumerWidget {
                         icon: '💾', label: 'Local SD Buffer',
                         desc: 'Circular write to MicroSD card',
                         value: settings['local_storage'] ?? true,
-                        onChanged: (v) => ref.read(settingsProvider.notifier).update('local_storage', v),
+                        onChanged: (v) => ref.read(settingsProvider.notifier).updateSetting('local_storage', v),
                       ),
                       _ToggleRow(
                         icon: '☁️', label: 'Cloud Sync (AWS S3)',
                         desc: 'AES-256 encrypted upload',
                         value: settings['cloud_sync'] ?? true,
-                        onChanged: (v) => ref.read(settingsProvider.notifier).update('cloud_sync', v),
+                        onChanged: (v) => ref.read(settingsProvider.notifier).updateSetting('cloud_sync', v),
                       ),
                       _ToggleRow(
                         icon: '🗑', label: 'Auto-Delete Local',
                         desc: 'Remove clips older than 7 days',
                         value: settings['auto_delete'] ?? true,
-                        onChanged: (v) => ref.read(settingsProvider.notifier).update('auto_delete', v),
+                        onChanged: (v) => ref.read(settingsProvider.notifier).updateSetting('auto_delete', v),
                       ),
                       _SelectRow(
                         icon: '📁', label: 'Clip Buffer Length',
                         desc: 'Recording duration per event',
                         value: '${settings['clip_length'] ?? 30} sec',
                         options: const ['10 sec', '20 sec', '30 sec', '60 sec'],
-                        onChanged: (v) => ref.read(settingsProvider.notifier).update('clip_length', int.parse(v.split(' ')[0])),
+                        onChanged: (v) => ref.read(settingsProvider.notifier).updateSetting('clip_length', int.parse(v.split(' ')[0])),
                       ),
                     ]),
 
                     // Security / Backend
                     const SectionHeader(title: 'SECURITY / BACKEND'),
                     _SettingGroup(children: [
-                      _InfoRow(
+                      const _InfoRow(
                         icon: '🔐', label: 'JWT Authentication',
                         desc: 'FastAPI token · expiry: 24h',
                         value: 'ACTIVE', valueColor: AppTheme.greenColor,
@@ -164,7 +165,7 @@ class ConfigScreen extends ConsumerWidget {
                         value: settings['encryption'] ?? true,
                         onChanged: (_) {}, // Always on — read-only
                       ),
-                      _InfoRow(
+                      const _InfoRow(
                         icon: '🔄', label: 'Firmware OTA',
                         desc: 'ESP32 over-the-air update',
                         value: 'v2.1.4', valueColor: AppTheme.accentColor,
@@ -243,7 +244,7 @@ class ConfigScreen extends ConsumerWidget {
           TextButton(
             onPressed: () {
               Navigator.pop(ctx);
-              // ApiService().rebootDevice();
+              ApiService().rebootDevice();
             },
             child: const Text('Reboot', style: TextStyle(color: AppTheme.redColor)),
           ),
@@ -315,8 +316,8 @@ class _ToggleRow extends StatelessWidget {
           Switch(
             value: value,
             onChanged: onChanged,
-            activeColor: AppTheme.greenColor,
-            activeTrackColor: AppTheme.greenColor.withOpacity(0.3),
+            activeThumbColor: AppTheme.greenColor,
+            activeTrackColor: AppTheme.greenColor.withValues(alpha: 0.3),
             inactiveThumbColor: AppTheme.mutedColor,
             inactiveTrackColor: AppTheme.borderColor,
           ),

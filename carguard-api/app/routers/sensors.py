@@ -1,11 +1,11 @@
 import asyncio
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 from sse_starlette.sse import EventSourceResponse
 
-from ..db.database import get_db, AsyncSessionLocal
+from ..db.database import get_db
 from ..db import crud
 from ..core.dependencies import get_current_user
 from ..core.config import settings
@@ -19,7 +19,7 @@ _latest_reading: dict = {}
 def update_latest_reading(data: dict):
     """Called by the heartbeat endpoint to update the in-memory sensor cache."""
     global _latest_reading
-    _latest_reading = {**data, "timestamp": datetime.utcnow().isoformat()}
+    _latest_reading = {**data, "timestamp": datetime.now(timezone.utc).isoformat()}
 
 
 @router.get("/latest")
@@ -71,7 +71,7 @@ async def sensor_stream(
                 "ultrasonic_meters": 0.0,
                 "temperature_c":     0.0,
                 "wifi_rssi":         0,
-                "timestamp":         datetime.utcnow().isoformat(),
+                "timestamp":         datetime.now(timezone.utc).isoformat(),
             }
 
             yield {

@@ -44,7 +44,7 @@ class _ClipPlayerScreenState extends State<ClipPlayerScreen> {
         materialProgressColors: ChewieProgressColors(
           playedColor: AppTheme.accentColor,
           handleColor: AppTheme.accentColor,
-          bufferedColor: AppTheme.accentColor.withOpacity(0.3),
+          bufferedColor: AppTheme.accentColor.withValues(alpha: 0.3),
           backgroundColor: AppTheme.surface2,
         ),
       );
@@ -104,13 +104,13 @@ class _ClipPlayerScreenState extends State<ClipPlayerScreen> {
                     child: CircularProgressIndicator(
                         color: AppTheme.accentColor, strokeWidth: 2))
                 : _error != null
-                    ? Center(
+                    ? const Center(
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            const Icon(Icons.error_outline,
+                            Icon(Icons.error_outline,
                                 color: AppTheme.redColor, size: 32),
-                            const SizedBox(height: 8),
+                            SizedBox(height: 8),
                             Text('Could not load clip',
                                 style: TextStyle(color: AppTheme.muted2Color)),
                           ],
@@ -131,7 +131,7 @@ class _ClipPlayerScreenState extends State<ClipPlayerScreen> {
                         _eventColor(widget.clip.eventType)),
                     const SizedBox(width: 8),
                     if (widget.clip.isCloudSynced)
-                      _MetaBadge('CLOUD SYNCED', AppTheme.accentColor),
+                      const _MetaBadge('CLOUD SYNCED', AppTheme.accentColor),
                   ],
                 ),
                 const SizedBox(height: 16),
@@ -192,9 +192,9 @@ class _MetaBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.12),
+        color: color.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(5),
-        border: Border.all(color: color.withOpacity(0.3)),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
       child: Text(label, style: TextStyle(
         fontFamily: 'Syne', fontSize: 9, fontWeight: FontWeight.w700, color: color,
@@ -204,9 +204,9 @@ class _MetaBadge extends StatelessWidget {
 }
 
 class _MetaRow extends StatelessWidget {
-  final String key;
+  final String label;
   final String value;
-  const _MetaRow(this.key, this.value);
+  const _MetaRow(this.label, this.value);
 
   @override
   Widget build(BuildContext context) {
@@ -216,7 +216,7 @@ class _MetaRow extends StatelessWidget {
         children: [
           SizedBox(
             width: 90,
-            child: Text(key, style: const TextStyle(
+            child: Text(label, style: const TextStyle(
               color: AppTheme.mutedColor, fontSize: 11,
               fontFamily: 'JetBrains Mono',
             )),

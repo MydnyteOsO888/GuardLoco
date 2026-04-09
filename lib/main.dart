@@ -26,8 +26,8 @@ void main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
-  // Initialize FCM / local notifications
-  await NotificationService.initialize();
+  // Initialize FCM / local notifications (unawaited — must not block runApp)
+  NotificationService.initialize().catchError((_) {});
 
   runApp(
     const ProviderScope(

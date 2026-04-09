@@ -34,7 +34,7 @@ Handles:
 - [Device Management] (arm/disarm, heartbeat, reboot)
 - [Sensor SSE Stream] (real-time MPU-6050 / PIR / HC-SR04 data)
 - [Video Clip Storage] (AWS S3 upload, presigned URLs, AES-256 encryption)
-- [[Event Log] (PostgreSQL — all security events with timestamps)
+- [Event Log] (PostgreSQL — all security events with timestamps)
     """,
     version="1.0.0",
     lifespan=lifespan,

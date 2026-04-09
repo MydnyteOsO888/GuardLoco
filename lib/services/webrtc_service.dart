@@ -131,5 +131,7 @@ class WebRtcService {
     await _peerConnection?.close();
     _peerConnection = null;
     _remoteStream = null;
+    await _remoteStreamController.close();
+    await _connectionStateController.close();
   }
 }

@@ -2,7 +2,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, update, delete, desc
 from sqlalchemy.orm import selectinload
 from typing import Optional
-from datetime import datetime
+from datetime import datetime, timezone
 
 from . import models
 from ..core.security import hash_password
@@ -154,7 +154,7 @@ async def upsert_device_status(db: AsyncSession, **kwargs) -> models.DeviceStatu
     if status:
         for k, v in kwargs.items():
             setattr(status, k, v)
-        status.last_seen = datetime.utcnow()
+        status.last_seen = datetime.now(timezone.utc)
     else:
         status = models.DeviceStatus(id=1, **kwargs)
         db.add(status)

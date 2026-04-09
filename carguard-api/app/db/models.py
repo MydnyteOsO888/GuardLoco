@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from sqlalchemy import String, Boolean, DateTime, Float, Integer, Text, ForeignKey, Enum as SAEnum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.dialects.postgresql import UUID
@@ -25,8 +25,8 @@ class User(Base):
     display_name: Mapped[str | None] = mapped_column(String, nullable=True)
     fcm_token:    Mapped[str | None] = mapped_column(String, nullable=True)
     is_active:    Mapped[bool] = mapped_column(Boolean, default=True)
-    created_at:   Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
-    updated_at:   Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at:   Mapped[datetime] = mapped_column(DateTime(timezone=True),default=lambda: datetime.now(timezone.utc))
+    updated_at:   Mapped[datetime] = mapped_column(DateTime(timezone=True),default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
 
     events: Mapped[list["SecurityEvent"]] = relationship("SecurityEvent", back_populates="user")
     clips:  Mapped[list["VideoClip"]]     = relationship("VideoClip",     back_populates="user")
@@ -39,7 +39,7 @@ class SecurityEvent(Base):
     id:            Mapped[str] = mapped_column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
     user_id:       Mapped[str] = mapped_column(String, ForeignKey("users.id"), nullable=False)
     type:          Mapped[EventType] = mapped_column(SAEnum(EventType), nullable=False)
-    timestamp:     Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, index=True)
+    timestamp:     Mapped[datetime] = mapped_column(DateTime(timezone=True),default=lambda: datetime.now(timezone.utc), index=True)
     sensor_value:  Mapped[float | None] = mapped_column(Float, nullable=True)   # g-force, meters, dB
     location:      Mapped[str | None]   = mapped_column(String, nullable=True)  # GPS if available
     is_read:       Mapped[bool]         = mapped_column(Boolean, default=False)
@@ -58,14 +58,14 @@ class VideoClip(Base):
     user_id:          Mapped[str] = mapped_column(String, ForeignKey("users.id"), nullable=False)
     event_id:         Mapped[str | None] = mapped_column(String, nullable=True)
     event_type:       Mapped[EventType]  = mapped_column(SAEnum(EventType), nullable=False)
-    timestamp:        Mapped[datetime]   = mapped_column(DateTime, default=datetime.utcnow, index=True)
+    timestamp:        Mapped[datetime]   = mapped_column(DateTime(timezone=True),default=lambda: datetime.now(timezone.utc), index=True)
     duration_seconds: Mapped[int]        = mapped_column(Integer, default=0)
     file_size_bytes:  Mapped[int]        = mapped_column(Integer, default=0)
     resolution:       Mapped[str]        = mapped_column(String, default="1080p")
     local_path:       Mapped[str | None] = mapped_column(String, nullable=True)   # SD card path on ESP32
     s3_key:           Mapped[str | None] = mapped_column(String, nullable=True)   # AWS S3 object key
     is_cloud_synced:  Mapped[bool]       = mapped_column(Boolean, default=False)
-    created_at:       Mapped[datetime]   = mapped_column(DateTime, default=datetime.utcnow)
+    created_at:       Mapped[datetime]   = mapped_column(DateTime(timezone=True),default=lambda: datetime.now(timezone.utc))
 
     user: Mapped["User"] = relationship("User", back_populates="clips")
 
@@ -86,8 +86,8 @@ class DeviceStatus(Base):
     storage_used_bytes:  Mapped[int] = mapped_column(Integer, default=0)
     storage_video_bytes: Mapped[int] = mapped_column(Integer, default=0)
     storage_logs_bytes:  Mapped[int] = mapped_column(Integer, default=0)
-    last_seen:        Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
-    updated_at:       Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    last_seen:        Mapped[datetime] = mapped_column(DateTime(timezone=True),default=lambda: datetime.now(timezone.utc))
+    updated_at:       Mapped[datetime] = mapped_column(DateTime(timezone=True),default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
 
 
 # ── Sensor Reading Log ────────────────────────────────────
@@ -95,7 +95,7 @@ class SensorLog(Base):
     __tablename__ = "sensor_logs"
 
     id:                  Mapped[int]   = mapped_column(Integer, primary_key=True, autoincrement=True)
-    timestamp:           Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, index=True)
+    timestamp:           Mapped[datetime] = mapped_column(DateTime(timezone=True),default=lambda: datetime.now(timezone.utc), index=True)
     vibration_g:         Mapped[float] = mapped_column(Float, default=0.0)
     motion_detected:     Mapped[bool]  = mapped_column(Boolean, default=False)
     ultrasonic_meters:   Mapped[float] = mapped_column(Float, default=0.0)
@@ -121,7 +121,7 @@ class DeviceSettings(Base):
     auto_delete:       Mapped[bool] = mapped_column(Boolean, default=True)
     clip_length:       Mapped[int]  = mapped_column(Integer, default=30)
     encryption:        Mapped[bool] = mapped_column(Boolean, default=True)
-    updated_at:        Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    updated_at:        Mapped[datetime] = mapped_column(DateTime(timezone=True),default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
 
 
 # ── WebRTC Session ────────────────────────────────────────
@@ -132,5 +132,5 @@ class WebRTCSession(Base):
     sdp_offer:     Mapped[str | None] = mapped_column(Text, nullable=True)
     sdp_answer:    Mapped[str | None] = mapped_column(Text, nullable=True)
     ice_candidates: Mapped[str | None] = mapped_column(Text, nullable=True)  # JSON array
-    created_at:    Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
-    expires_at:    Mapped[datetime] = mapped_column(DateTime)
+    created_at:    Mapped[datetime] = mapped_column(DateTime(timezone=True),default=lambda: datetime.now(timezone.utc))
+    expires_at:    Mapped[datetime] = mapped_column(DateTime(timezone=True))

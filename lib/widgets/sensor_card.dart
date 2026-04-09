@@ -30,11 +30,11 @@ class SensorCard extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(10, 10, 10, 10),
       decoration: BoxDecoration(
         color: isAlert
-            ? accentColor.withOpacity(0.07)
+            ? accentColor.withValues(alpha: 0.07)
             : AppTheme.surfaceColor,
         borderRadius: BorderRadius.circular(13),
         border: Border.all(
-          color: isAlert ? accentColor.withOpacity(0.4) : AppTheme.borderColor,
+          color: isAlert ? accentColor.withValues(alpha: 0.4) : AppTheme.borderColor,
         ),
       ),
       child: Column(
@@ -133,7 +133,7 @@ class EventTile extends StatelessWidget {
           color: event.isRead ? AppTheme.surfaceColor : AppTheme.surfaceColor,
           borderRadius: BorderRadius.circular(13),
           border: Border.all(
-            color: event.isRead ? AppTheme.borderColor : _color.withOpacity(0.25),
+            color: event.isRead ? AppTheme.borderColor : _color.withValues(alpha: 0.25),
           ),
         ),
         child: Row(
@@ -142,7 +142,7 @@ class EventTile extends StatelessWidget {
             Container(
               width: 34, height: 34,
               decoration: BoxDecoration(
-                color: _color.withOpacity(0.1),
+                color: _color.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(9),
               ),
               child: Center(
@@ -165,7 +165,7 @@ class EventTile extends StatelessWidget {
                   Text(
                     _formatTime(event.timestamp) +
                         (event.sensorValue != null
-                            ? ' · ${event.sensorValue!.toStringAsFixed(1)} ${_sensorUnit}'
+                            ? ' · ${event.sensorValue!.toStringAsFixed(1)} $_sensorUnit'
                             : ''),
                     style: const TextStyle(
                       fontFamily: 'JetBrains Mono',
@@ -180,7 +180,7 @@ class EventTile extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
               decoration: BoxDecoration(
-                color: _color.withOpacity(0.1),
+                color: _color.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(5),
               ),
               child: Text(
@@ -206,9 +206,9 @@ class EventTile extends StatelessWidget {
   }
 
   String get _sensorUnit => switch (event.type) {
-    EventType.vibrationG => 'g',
-    EventType.proximity  => 'm',
-    _                    => '',
+    EventType.impact    => 'g',
+    EventType.proximity => 'm',
+    _                   => '',
   };
 }
 

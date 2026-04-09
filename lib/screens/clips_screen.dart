@@ -35,8 +35,8 @@ class ClipsScreen extends ConsumerWidget {
                         fontWeight: FontWeight.w800, letterSpacing: -0.3,
                       ),
                       children: [
-                        TextSpan(text: 'SAVED ', color: AppTheme.textColor),
-                        TextSpan(text: 'CLIPS', color: AppTheme.accentColor),
+                        TextSpan(text: 'SAVED ', style: TextStyle(color: AppTheme.textColor)),
+                        TextSpan(text: 'CLIPS', style: TextStyle(color: AppTheme.accentColor)),
                       ],
                     ),
                   ),
@@ -166,7 +166,7 @@ class ClipsScreen extends ConsumerWidget {
                     children: [
                       const Icon(Icons.error_outline, color: AppTheme.redColor, size: 32),
                       const SizedBox(height: 8),
-                      Text('Failed to load clips',
+                      const Text('Failed to load clips',
                           style: TextStyle(color: AppTheme.muted2Color)),
                       const SizedBox(height: 12),
                       TextButton(
@@ -214,11 +214,11 @@ class _FilterChip extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
         decoration: BoxDecoration(
-          color: active ? AppTheme.accentColor.withOpacity(0.1) : AppTheme.surfaceColor,
+          color: active ? AppTheme.accentColor.withValues(alpha: 0.1) : AppTheme.surfaceColor,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
             color: active
-                ? AppTheme.accentColor.withOpacity(0.4)
+                ? AppTheme.accentColor.withValues(alpha: 0.4)
                 : AppTheme.borderColor,
           ),
         ),
@@ -273,7 +273,7 @@ class _ClipCard extends StatelessWidget {
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
                         decoration: BoxDecoration(
-                          color: Colors.black.withOpacity(0.75),
+                          color: Colors.black.withValues(alpha: 0.75),
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Text(
@@ -286,9 +286,9 @@ class _ClipCard extends StatelessWidget {
                       ),
                     ),
                     if (clip.isCloudSynced)
-                      Positioned(
+                      const Positioned(
                         top: 5, right: 6,
-                        child: const Icon(Icons.cloud_done,
+                        child: Icon(Icons.cloud_done,
                             size: 14, color: AppTheme.accentColor),
                       ),
                   ],
@@ -343,7 +343,7 @@ class _EventTag extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
-        color: _color.withOpacity(0.12),
+        color: _color.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(4),
       ),
       child: Text(

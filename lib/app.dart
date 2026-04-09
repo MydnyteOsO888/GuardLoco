@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'theme/app_theme.dart';
 import 'screens/login_screen.dart';
 import 'screens/shell_screen.dart';
-import 'providers/auth_provider.dart';
+import 'providers/providers.dart';
 
 class CarGuardApp extends ConsumerWidget {
   const CarGuardApp({super.key});
@@ -46,8 +46,8 @@ class _SplashScreen extends StatelessWidget {
                   letterSpacing: -0.5,
                 ),
                 children: [
-                  TextSpan(text: 'CAR', color: Colors.white),
-                  TextSpan(text: 'GUARD', color: AppTheme.accentColor),
+                  TextSpan(text: 'Guard', style: TextStyle(color: Colors.white)),
+                  TextSpan(text: 'Loco', style: TextStyle(color: AppTheme.accentColor)),
                 ],
               ),
             ),

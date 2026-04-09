@@ -57,15 +57,22 @@ class NotificationService {
           ),
         );
 
-    // 4. Get and register FCM token
-    final token = await _fcm.getToken();
-    if (token != null) {
-      await ApiService().updateFcmToken(token);
-    }
+    // 4. Get and register FCM token (non-blocking — emulator may lack Play Services)
+    _fcm.getToken().then((token) async {
+      if (token != null) {
+        try {
+          await ApiService().updateFcmToken(token);
+        } catch (_) {
+          // Backend not reachable yet — token will sync on next login
+        }
+      }
+    }).catchError((_) {});
 
     // Token refresh
     _fcm.onTokenRefresh.listen((newToken) async {
-      await ApiService().updateFcmToken(newToken);
+      try {
+        await ApiService().updateFcmToken(newToken);
+      } catch (_) {}
     });
 
     // 5. Foreground messages — show local notification
@@ -160,7 +167,9 @@ class _StreamController<T> {
   final _listeners = <void Function(T)>[];
 
   void add(T value) {
-    for (final l in _listeners) l(value);
+    for (final l in _listeners) {
+      l(value);
+    }
   }
 
   void listen(void Function(T) callback) {

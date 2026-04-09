@@ -3,7 +3,19 @@ import 'package:json_annotation/json_annotation.dart';
 part 'models.g.dart';
 
 // ── Event / Alert ─────────────────────────────────────────
-enum EventType { motion, impact, sound, proximity, scheduled }
+enum EventType {
+  motion, impact, sound, proximity, scheduled;
+
+  String get typeLabel {
+    switch (this) {
+      case EventType.motion:    return 'MOTION';
+      case EventType.impact:    return 'IMPACT';
+      case EventType.sound:     return 'SOUND';
+      case EventType.proximity: return 'PROXIMITY';
+      case EventType.scheduled: return 'SCHEDULED';
+    }
+  }
+}
 
 @JsonSerializable()
 class SecurityEvent {
@@ -54,7 +66,7 @@ class SecurityEvent {
 @JsonSerializable()
 class VideoClip {
   final String id;
-  final String eventId;
+  final String? eventId;
   final EventType eventType;
   final DateTime timestamp;
   final int durationSeconds;
@@ -66,7 +78,7 @@ class VideoClip {
 
   const VideoClip({
     required this.id,
-    required this.eventId,
+    this.eventId,
     required this.eventType,
     required this.timestamp,
     required this.durationSeconds,
@@ -84,7 +96,7 @@ class VideoClip {
   String get formattedDuration {
     final m = durationSeconds ~/ 60;
     final s = durationSeconds % 60;
-    return '${m}:${s.toString().padLeft(2, '0')}';
+    return '$m:${s.toString().padLeft(2, '0')}';
   }
 
   String get formattedSize {
@@ -174,7 +186,7 @@ class StorageInfo {
       _$StorageInfoFromJson(json);
   Map<String, dynamic> toJson() => _$StorageInfoToJson(this);
 
-  double get usedPercent => usedBytes / totalBytes;
+  double get usedPercent => totalBytes == 0 ? 0.0 : usedBytes / totalBytes;
   int get freeBytes => totalBytes - usedBytes;
 
   String formatBytes(int bytes) {

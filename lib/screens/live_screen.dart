@@ -80,8 +80,8 @@ class _LiveScreenState extends ConsumerState<LiveScreen> {
                             fontWeight: FontWeight.w800, letterSpacing: -0.3,
                           ),
                           children: [
-                            TextSpan(text: 'GUARD', color: AppTheme.textColor),
-                            TextSpan(text: 'LOCO', color: AppTheme.accentColor),
+                            TextSpan(text: 'GUARD', style: TextStyle(color: AppTheme.textColor)),
+                            TextSpan(text: 'LOCO', style: TextStyle(color: AppTheme.accentColor)),
                           ],
                         ),
                       ),
@@ -255,7 +255,7 @@ class _DeviceStatusDot extends StatelessWidget {
             boxShadow: [
               BoxShadow(
                 color: (isOnline ? AppTheme.greenColor : AppTheme.redColor)
-                    .withOpacity(0.4),
+                    .withValues(alpha: 0.4),
                 blurRadius: 6,
               ),
             ],
@@ -295,8 +295,8 @@ class _DeviceCard extends StatelessWidget {
             width: 46, height: 46,
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(13),
-              color: AppTheme.accentColor.withOpacity(0.08),
-              border: Border.all(color: AppTheme.accentColor.withOpacity(0.2)),
+              color: AppTheme.accentColor.withValues(alpha: 0.08),
+              border: Border.all(color: AppTheme.accentColor.withValues(alpha: 0.2)),
             ),
             child: const Center(child: Text('📷', style: TextStyle(fontSize: 20))),
           ),
@@ -316,10 +316,10 @@ class _DeviceCard extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 6),
-                Row(
+                const Row(
                   children: [
                     _Pill('ONLINE', AppTheme.greenColor),
-                    const SizedBox(width: 6),
+                    SizedBox(width: 6),
                     _Pill('1080p · 30fps', AppTheme.accentColor),
                   ],
                 ),
@@ -342,7 +342,7 @@ class _Pill extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.12),
+        color: color.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(5),
       ),
       child: Text(
@@ -426,9 +426,9 @@ class _VideoFeedCard extends StatelessWidget {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                 decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.6),
+                  color: Colors.black.withValues(alpha: 0.6),
                   borderRadius: BorderRadius.circular(4),
-                  border: Border.all(color: AppTheme.accentColor.withOpacity(0.3)),
+                  border: Border.all(color: AppTheme.accentColor.withValues(alpha: 0.3)),
                 ),
                 child: const Text(
                   'WebRTC P2P',
@@ -441,11 +441,11 @@ class _VideoFeedCard extends StatelessWidget {
             ),
 
             // Bottom overlay
-            Positioned(
+            const Positioned(
               bottom: 10, right: 10,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
-                children: const [
+                children: [
                   Text('1920×1080', style: TextStyle(fontFamily: 'JetBrains Mono', fontSize: 8, color: Colors.white38)),
                   Text('SRTP Encrypted', style: TextStyle(fontFamily: 'JetBrains Mono', fontSize: 8, color: Colors.white24)),
                 ],
@@ -526,7 +526,7 @@ class _FeedBtn extends StatelessWidget {
       child: Container(
         width: 28, height: 28,
         decoration: BoxDecoration(
-          color: Colors.black.withOpacity(0.5),
+          color: Colors.black.withValues(alpha: 0.5),
           borderRadius: BorderRadius.circular(8),
           border: Border.all(color: Colors.white12),
         ),
@@ -550,13 +550,13 @@ class _ArmButton extends StatelessWidget {
         height: 50,
         decoration: BoxDecoration(
           color: isArmed
-              ? AppTheme.redColor.withOpacity(0.12)
-              : AppTheme.greenColor.withOpacity(0.1),
+              ? AppTheme.redColor.withValues(alpha: 0.12)
+              : AppTheme.greenColor.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(14),
           border: Border.all(
             color: isArmed
-                ? AppTheme.redColor.withOpacity(0.35)
-                : AppTheme.greenColor.withOpacity(0.25),
+                ? AppTheme.redColor.withValues(alpha: 0.35)
+                : AppTheme.greenColor.withValues(alpha: 0.25),
           ),
         ),
         child: Row(
@@ -620,7 +620,7 @@ class _FcmStatusBar extends StatelessWidget {
               color: AppTheme.greenColor,
               boxShadow: [
                 BoxShadow(
-                  color: AppTheme.greenColor.withOpacity(0.4),
+                  color: AppTheme.greenColor.withValues(alpha: 0.4),
                   blurRadius: 6, spreadRadius: 1,
                 ),
               ],

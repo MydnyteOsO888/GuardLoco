@@ -34,8 +34,8 @@ class StatusScreen extends ConsumerWidget {
                       fontWeight: FontWeight.w800, letterSpacing: -0.3,
                     ),
                     children: [
-                      TextSpan(text: 'SYSTEM ', color: AppTheme.textColor),
-                      TextSpan(text: 'STATUS', color: AppTheme.accentColor),
+                      TextSpan(text: 'SYSTEM ', style: TextStyle(color: AppTheme.textColor)),
+                      TextSpan(text: 'STATUS', style: TextStyle(color: AppTheme.accentColor)),
                     ],
                   ),
                 ),
@@ -268,13 +268,13 @@ class _DiagnosticsGrid extends StatelessWidget {
         crossAxisSpacing: 8,
         childAspectRatio: 1.6,
         children: [
-          _DiagCard('🔋', 'Power',     'STABLE',  AppTheme.greenColor,  'USB-C 5V / 2A'),
+          const _DiagCard('🔋', 'Power',     'STABLE',  AppTheme.greenColor,  'USB-C 5V / 2A'),
           _DiagCard('📶', 'WiFi',      '${status.wifiRssi} dBm', AppTheme.accentColor, 'Signal strength'),
           _DiagCard('🌡', 'MCU Temp',  '${status.mcuTempC.toStringAsFixed(0)}°C',
               status.mcuTempC > 70 ? AppTheme.redColor : AppTheme.textColor, 'ESP32 internal'),
           _DiagCard('⏱', 'Uptime',    status.formattedUptime, AppTheme.textColor, 'Since last reboot'),
           _DiagCard('🔧', 'Firmware',  status.firmwareVersion, AppTheme.accentColor, 'ESP32 OTA'),
-          _DiagCard('🛡', 'Encryption','AES-256', AppTheme.greenColor, 'Data at rest + transit'),
+          const _DiagCard('🛡', 'Encryption','AES-256', AppTheme.greenColor, 'Data at rest + transit'),
         ],
       ),
     );
@@ -318,10 +318,10 @@ class _DiagCard extends StatelessWidget {
 class _BackendCards extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
+    return const Padding(
+      padding: EdgeInsets.symmetric(horizontal: 20),
       child: Column(
-        children: const [
+        children: [
           _ServiceRow('🐍', 'FastAPI Backend', 'api.carguard.io · PostgreSQL · JWT', 'ONLINE', AppTheme.greenColor),
           SizedBox(height: 8),
           _ServiceRow('☁️', 'Cloud Storage (AWS S3)', 'AES-256 · Auto-sync ON', 'SYNCED', AppTheme.accentColor),
@@ -368,7 +368,7 @@ class _ServiceRow extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
             decoration: BoxDecoration(
-              color: statusColor.withOpacity(0.12),
+              color: statusColor.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(5),
             ),
             child: Text(status, style: TextStyle(

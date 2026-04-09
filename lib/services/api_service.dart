@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
@@ -69,7 +71,9 @@ class ApiService {
     });
     await _storage.write(key: 'jwt_token', value: resp.data['access_token']);
     await _storage.write(key: 'refresh_token', value: resp.data['refresh_token']);
-    return AppUser.fromJson(resp.data['user']);
+    final user = AppUser.fromJson(resp.data['user']);
+    await _storage.write(key: 'current_user', value: jsonEncode(resp.data['user']));
+    return user;
   }
 
   Future<void> logout() async {
@@ -207,8 +211,6 @@ class ApiService {
 
   // ── Helpers ───────────────────────────────────────────────
   Map<String, dynamic> _parseJson(String raw) {
-    // Simple JSON parse wrapper
-    import 'dart:convert';
     return jsonDecode(raw) as Map<String, dynamic>;
   }
 }

@@ -65,8 +65,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     letterSpacing: -1.0,
                   ),
                   children: [
-                    TextSpan(text: 'GUARD', color: Colors.white),
-                    TextSpan(text: 'LOCO', color: AppTheme.accentColor),
+                    TextSpan(text: 'GUARD', style: TextStyle(color: Colors.white)),
+                    TextSpan(text: 'LOCO', style: TextStyle(color: AppTheme.accentColor)),
                   ],
                 ),
               ),
@@ -129,9 +129,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                   decoration: BoxDecoration(
-                    color: AppTheme.redColor.withOpacity(0.1),
+                    color: AppTheme.redColor.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: AppTheme.redColor.withOpacity(0.3)),
+                    border: Border.all(color: AppTheme.redColor.withValues(alpha: 0.3)),
                   ),
                   child: Row(
                     children: [
@@ -176,7 +176,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   style: TextStyle(
                     fontFamily: 'JetBrains Mono',
                     fontSize: 10,
-                    color: AppTheme.mutedColor.withOpacity(0.5),
+                    color: AppTheme.mutedColor.withValues(alpha: 0.5),
                   ),
                 ),
               ),

@@ -1,21 +1,54 @@
 import 'dart:async';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import '../models/models.dart';
 import '../services/api_service.dart';
 import '../services/webrtc_service.dart';
 
 // ── Auth ─────────────────────────────────────────────────
-final authProvider = StreamProvider<User?>((ref) {
-  return FirebaseAuth.instance.authStateChanges();
+final authProvider =
+    StateNotifierProvider<AuthNotifier, AsyncValue<AppUser?>>((ref) {
+  return AuthNotifier();
 });
 
-final currentUserProvider = FutureProvider<AppUser?>((ref) async {
-  final user = ref.watch(authProvider).value;
-  if (user == null) return null;
-  // Could also fetch extended user profile from FastAPI here
-  return AppUser(id: user.uid, email: user.email ?? '');
+class AuthNotifier extends StateNotifier<AsyncValue<AppUser?>> {
+  static const _storage = FlutterSecureStorage();
+
+  AuthNotifier() : super(const AsyncLoading()) {
+    _init();
+  }
+
+  Future<void> _init() async {
+    try {
+      final token = await _storage.read(key: 'jwt_token');
+      if (token != null) {
+        final userJson = await _storage.read(key: 'current_user');
+        if (userJson != null) {
+          state = AsyncData(AppUser.fromJson(jsonDecode(userJson)));
+          return;
+        }
+      }
+      state = const AsyncData(null);
+    } catch (_) {
+      state = const AsyncData(null);
+    }
+  }
+
+  Future<void> signIn(String email, String password) async {
+    final user = await ApiService().login(email, password);
+    state = AsyncData(user);
+  }
+
+  Future<void> signOut() async {
+    await ApiService().logout();
+    state = const AsyncData(null);
+  }
+}
+
+final currentUserProvider = Provider<AppUser?>((ref) {
+  return ref.watch(authProvider).asData?.value;
 });
 
 // ── Device Status ─────────────────────────────────────────
@@ -184,7 +217,7 @@ class SettingsNotifier extends AsyncNotifier<Map<String, dynamic>> {
     return ApiService().getSettings();
   }
 
-  Future<void> update(String key, dynamic value) async {
+  Future<void> updateSetting(String key, dynamic value) async {
     final current = Map<String, dynamic>.from(state.value ?? {});
     current[key] = value;
     state = AsyncData(current);

@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "85627459753",
+    "project_id": "guardloco",
+    "storage_bucket": "guardloco.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:85627459753:android:033b5c640447b83f27f1b8",
+        "android_client_info": {
+          "package_name": "GuardLoco.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDB2yGDSd3lEeg4ZxtlgPWi3bp-DqKDCF0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:85627459753:android:8de845e8488c97f827f1b8",
+        "android_client_info": {
+          "package_name": "com.guardloco.carguard"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDB2yGDSd3lEeg4ZxtlgPWi3bp-DqKDCF0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
