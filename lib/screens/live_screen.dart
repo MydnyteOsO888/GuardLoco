@@ -1,10 +1,13 @@
+import 'dart:async';
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_webrtc/flutter_webrtc.dart';
 
 import '../theme/app_theme.dart';
 import '../models/models.dart';
 import '../providers/providers.dart';
+import '../services/api_service.dart';
 import '../widgets/sensor_card.dart';
 import '../widgets/event_tile.dart';
 import '../widgets/section_header.dart';
@@ -17,36 +20,45 @@ class LiveScreen extends ConsumerStatefulWidget {
 }
 
 class _LiveScreenState extends ConsumerState<LiveScreen> {
-  final _remoteRenderer = RTCVideoRenderer();
-  bool _rendererInit = false;
+  Timer? _snapTimer;
+  Uint8List? _frame;
+  bool _streaming = false;
+  bool _fetching = false;
 
   @override
   void initState() {
     super.initState();
-    _initRenderer();
+    _startStream();
   }
 
-  Future<void> _initRenderer() async {
-    await _remoteRenderer.initialize();
-    setState(() => _rendererInit = true);
-
-    // Start WebRTC connection
-    await ref.read(webRtcConnectionProvider.notifier).connect();
-
-    // Attach remote stream to renderer
-    final service = ref.read(webRtcServiceProvider);
-    service.remoteStream.listen((stream) {
-      if (mounted) {
-        setState(() {
-          _remoteRenderer.srcObject = stream;
-        });
+  Future<void> _fetchFrame() async {
+    if (_fetching) return;
+    _fetching = true;
+    try {
+      final bytes = await ApiService().getSnapshot();
+      if (mounted && bytes != null) {
+        setState(() => _frame = Uint8List.fromList(bytes));
       }
-    });
+    } finally {
+      _fetching = false;
+    }
+  }
+
+  void _startStream() {
+    setState(() => _streaming = true);
+    _fetchFrame();
+    _snapTimer = Timer.periodic(const Duration(milliseconds: 300), (_) => _fetchFrame());
+  }
+
+  void _stopStream() {
+    _snapTimer?.cancel();
+    _snapTimer = null;
+    setState(() { _streaming = false; _frame = null; });
   }
 
   @override
   void dispose() {
-    _remoteRenderer.dispose();
+    _snapTimer?.cancel();
     super.dispose();
   }
 
@@ -55,7 +67,6 @@ class _LiveScreenState extends ConsumerState<LiveScreen> {
     final deviceAsync = ref.watch(deviceStatusProvider);
     final sensorAsync = ref.watch(sensorStreamProvider);
     final eventsAsync = ref.watch(eventsProvider);
-    final webRtcState = ref.watch(webRtcConnectionProvider);
 
     return Scaffold(
       backgroundColor: AppTheme.bgColor,
@@ -111,16 +122,14 @@ class _LiveScreenState extends ConsumerState<LiveScreen> {
                 ),
               ),
 
-              // ── WebRTC Video Feed ─────────────────────────
+              // ── Camera Feed ───────────────────────────────
               SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(20, 14, 20, 0),
                   child: _VideoFeedCard(
-                    renderer: _remoteRenderer,
-                    rendererInit: _rendererInit,
-                    connectionState: webRtcState,
-                    onReconnect: () =>
-                        ref.read(webRtcConnectionProvider.notifier).connect(),
+                    frame: _frame,
+                    streaming: _streaming,
+                    onToggle: _streaming ? _stopStream : _startStream,
                   ),
                 ),
               ),
@@ -356,16 +365,14 @@ class _Pill extends StatelessWidget {
 }
 
 class _VideoFeedCard extends StatelessWidget {
-  final RTCVideoRenderer renderer;
-  final bool rendererInit;
-  final WebRtcConnectionState connectionState;
-  final VoidCallback onReconnect;
+  final Uint8List? frame;
+  final bool streaming;
+  final VoidCallback onToggle;
 
   const _VideoFeedCard({
-    required this.renderer,
-    required this.rendererInit,
-    required this.connectionState,
-    required this.onReconnect,
+    required this.frame,
+    required this.streaming,
+    required this.onToggle,
   });
 
   @override
@@ -375,30 +382,34 @@ class _VideoFeedCard extends StatelessWidget {
       child: ClipRRect(
         borderRadius: BorderRadius.circular(16),
         child: Stack(
+          fit: StackFit.expand,
           children: [
-            // Video or placeholder
             Container(color: const Color(0xFF020408)),
-            if (rendererInit &&
-                connectionState == WebRtcConnectionState.connected)
-              RTCVideoView(renderer, objectFit: RTCVideoViewObjectFit.RTCVideoViewObjectFitCover)
-            else
-              _FeedPlaceholder(state: connectionState, onReconnect: onReconnect),
 
-            // Overlay badges
+            if (frame != null)
+              Image.memory(frame!, fit: BoxFit.cover, gaplessPlayback: true)
+            else
+              Center(
+                child: streaming
+                    ? const CircularProgressIndicator(
+                        color: AppTheme.accentColor, strokeWidth: 2)
+                    : const Icon(Icons.videocam_off,
+                        color: AppTheme.mutedColor, size: 36),
+              ),
+
+            // LIVE badge
             Positioned(
               top: 10, left: 10,
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
-                  color: connectionState == WebRtcConnectionState.connected
-                      ? AppTheme.redColor
-                      : AppTheme.mutedColor,
+                  color: frame != null ? AppTheme.redColor : AppTheme.mutedColor,
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    if (connectionState == WebRtcConnectionState.connected)
+                    if (frame != null)
                       Container(
                         width: 5, height: 5,
                         margin: const EdgeInsets.only(right: 4),
@@ -407,13 +418,11 @@ class _VideoFeedCard extends StatelessWidget {
                         ),
                       ),
                     Text(
-                      connectionState == WebRtcConnectionState.connected
-                          ? 'LIVE'
-                          : connectionState.name.toUpperCase(),
+                      frame != null ? 'LIVE' : 'OFFLINE',
                       style: const TextStyle(
                         fontFamily: 'JetBrains Mono',
-                        fontSize: 9, fontWeight: FontWeight.w700, color: Colors.white,
-                        letterSpacing: 0.5,
+                        fontSize: 9, fontWeight: FontWeight.w700,
+                        color: Colors.white, letterSpacing: 0.5,
                       ),
                     ),
                   ],
@@ -428,85 +437,23 @@ class _VideoFeedCard extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: Colors.black.withValues(alpha: 0.6),
                   borderRadius: BorderRadius.circular(4),
-                  border: Border.all(color: AppTheme.accentColor.withValues(alpha: 0.3)),
+                  border: Border.all(
+                      color: AppTheme.accentColor.withValues(alpha: 0.3)),
                 ),
-                child: const Text(
-                  'WebRTC P2P',
-                  style: TextStyle(
-                    fontFamily: 'JetBrains Mono',
-                    fontSize: 8, color: AppTheme.accentColor,
-                  ),
-                ),
+                child: const Text('MJPEG',
+                    style: TextStyle(
+                        fontFamily: 'JetBrains Mono',
+                        fontSize: 8, color: AppTheme.accentColor)),
               ),
             ),
 
-            // Bottom overlay
-            const Positioned(
-              bottom: 10, right: 10,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Text('1920×1080', style: TextStyle(fontFamily: 'JetBrains Mono', fontSize: 8, color: Colors.white38)),
-                  Text('SRTP Encrypted', style: TextStyle(fontFamily: 'JetBrains Mono', fontSize: 8, color: Colors.white24)),
-                ],
-              ),
-            ),
-
-            // Action buttons
             Positioned(
               bottom: 10, left: 10,
-              child: Row(
-                children: [
-                  _FeedBtn(icon: Icons.camera_alt_outlined, onTap: () {}),
-                  const SizedBox(width: 6),
-                  _FeedBtn(icon: Icons.volume_up_outlined, onTap: () {}),
-                ],
+              child: _FeedBtn(
+                icon: streaming ? Icons.stop : Icons.play_arrow,
+                onTap: onToggle,
               ),
             ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _FeedPlaceholder extends StatelessWidget {
-  final WebRtcConnectionState state;
-  final VoidCallback onReconnect;
-  const _FeedPlaceholder({required this.state, required this.onReconnect});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      color: const Color(0xFF060810),
-      child: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (state == WebRtcConnectionState.connecting)
-              const CircularProgressIndicator(
-                color: AppTheme.accentColor, strokeWidth: 2,
-              )
-            else if (state == WebRtcConnectionState.error)
-              Column(
-                children: [
-                  const Icon(Icons.signal_wifi_off,
-                      color: AppTheme.mutedColor, size: 32),
-                  const SizedBox(height: 8),
-                  const Text('Stream unavailable',
-                      style: TextStyle(color: AppTheme.muted2Color, fontSize: 12)),
-                  const SizedBox(height: 12),
-                  TextButton(
-                    onPressed: onReconnect,
-                    child: const Text('Reconnect',
-                        style: TextStyle(color: AppTheme.accentColor)),
-                  ),
-                ],
-              )
-            else
-              const CircularProgressIndicator(
-                color: AppTheme.accentColor, strokeWidth: 2,
-              ),
           ],
         ),
       ),

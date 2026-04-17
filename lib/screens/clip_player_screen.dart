@@ -1,6 +1,6 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
-import 'package:chewie/chewie.dart';
-import 'package:video_player/video_player.dart';
 
 import '../models/models.dart';
 import '../services/api_service.dart';
@@ -15,41 +15,32 @@ class ClipPlayerScreen extends StatefulWidget {
 }
 
 class _ClipPlayerScreenState extends State<ClipPlayerScreen> {
-  VideoPlayerController? _videoController;
-  ChewieController? _chewieController;
+  Uint8List? _imageBytes;
+  String? _imageUrl;
   bool _loading = true;
   String? _error;
 
   @override
   void initState() {
     super.initState();
-    _initPlayer();
+    _loadImage();
   }
 
-  Future<void> _initPlayer() async {
+  Future<void> _loadImage() async {
     try {
-      // Get signed stream URL from backend (AWS S3 presigned or local)
-      final url = widget.clip.cloudUrl ??
-          await ApiService().getClipStreamUrl(widget.clip.id);
-
-      _videoController = VideoPlayerController.networkUrl(Uri.parse(url));
-      await _videoController!.initialize();
-
-      _chewieController = ChewieController(
-        videoPlayerController: _videoController!,
-        autoPlay: true,
-        looping: false,
-        aspectRatio: 16 / 9,
-        allowFullScreen: true,
-        materialProgressColors: ChewieProgressColors(
-          playedColor: AppTheme.accentColor,
-          handleColor: AppTheme.accentColor,
-          bufferedColor: AppTheme.accentColor.withValues(alpha: 0.3),
-          backgroundColor: AppTheme.surface2,
-        ),
-      );
-
-      if (mounted) setState(() => _loading = false);
+      if (widget.clip.isCloudSynced) {
+        final url = await ApiService().getClipStreamUrl(widget.clip.id);
+        if (mounted) setState(() { _imageUrl = url; _loading = false; });
+      } else {
+        final bytes = await ApiService().getClipImage(widget.clip.id);
+        if (mounted) {
+          setState(() {
+            _imageBytes = bytes != null ? Uint8List.fromList(bytes) : null;
+            _loading = false;
+            if (bytes == null) _error = 'Could not load clip';
+          });
+        }
+      }
     } catch (e) {
       if (mounted) setState(() { _loading = false; _error = e.toString(); });
     }
@@ -57,8 +48,6 @@ class _ClipPlayerScreenState extends State<ClipPlayerScreen> {
 
   @override
   void dispose() {
-    _chewieController?.dispose();
-    _videoController?.dispose();
     super.dispose();
   }
 
@@ -116,7 +105,11 @@ class _ClipPlayerScreenState extends State<ClipPlayerScreen> {
                           ],
                         ),
                       )
-                    : Chewie(controller: _chewieController!),
+                    : _imageBytes != null
+                        ? Image.memory(_imageBytes!, fit: BoxFit.contain)
+                        : _imageUrl != null
+                            ? Image.network(_imageUrl!, fit: BoxFit.contain)
+                            : const SizedBox.shrink(),
           ),
 
           // Clip metadata
@@ -138,7 +131,7 @@ class _ClipPlayerScreenState extends State<ClipPlayerScreen> {
                 _MetaRow('Resolution', widget.clip.resolution),
                 _MetaRow('File size', widget.clip.formattedSize),
                 _MetaRow('Duration', widget.clip.formattedDuration),
-                _MetaRow('Stored', widget.clip.isCloudSynced ? 'AWS S3 + Local' : 'Local SD Card'),
+                _MetaRow('Stored', widget.clip.isCloudSynced ? 'AWS S3' : 'Local Server'),
               ],
             ),
           ),

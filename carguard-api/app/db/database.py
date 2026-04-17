@@ -5,8 +5,10 @@ from ..core.config import settings
 engine = create_async_engine(
     settings.DATABASE_URL,
     echo=settings.DEBUG,
-    pool_size=10,
-    max_overflow=20,
+    pool_size=5,
+    max_overflow=10,
+    pool_timeout=10,
+    pool_recycle=300,
     pool_pre_ping=True,
 )
 

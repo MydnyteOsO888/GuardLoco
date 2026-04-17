@@ -1,6 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException, Header
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Optional
+import httpx
+from loguru import logger
 
 from ..db.database import get_db
 from ..db import crud, models
@@ -8,6 +10,7 @@ from ..core.dependencies import get_current_user
 from ..core.config import settings
 from ..schemas.schemas import EventResponse, AlertPayload
 from ..services.fcm_service import send_alert_notification
+from ..services.local_storage_service import save_clip
 
 router = APIRouter(prefix="/events", tags=["Events & Alerts"])
 
@@ -57,8 +60,28 @@ async def receive_alert(
         if notification_sent:
             await crud.mark_notification_sent(db, event.id)
 
+    # Capture snapshot from ESP32 and save as clip
+    clip_id = None
+    try:
+        from ..main import esp32_client
+        snap = await esp32_client.get("/snapshot")
+        if snap.status_code == 200:
+            clip_id, file_path = await save_clip(snap.content)
+            await crud.create_clip(
+                db,
+                user_id=user.id,
+                event_type=body.event_type,
+                event_id=event.id,
+                file_size_bytes=len(snap.content),
+                local_path=file_path,
+                resolution="320x240",
+            )
+    except Exception as e:
+        logger.warning(f"Clip capture failed: {e}")
+
     return {
         "event_id": event.id,
+        "clip_id": clip_id,
         "notification_sent": notification_sent,
     }
 

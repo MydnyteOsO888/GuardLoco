@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -5,6 +7,7 @@ import 'package:intl/intl.dart';
 import '../theme/app_theme.dart';
 import '../models/models.dart';
 import '../providers/providers.dart';
+import '../services/api_service.dart';
 import '../widgets/section_header.dart';
 import 'clip_player_screen.dart';
 
@@ -235,7 +238,7 @@ class _FilterChip extends StatelessWidget {
   }
 }
 
-class _ClipCard extends StatelessWidget {
+class _ClipCard extends StatefulWidget {
   final VideoClip clip;
   final VoidCallback onTap;
   final VoidCallback onDelete;
@@ -243,9 +246,39 @@ class _ClipCard extends StatelessWidget {
   const _ClipCard({required this.clip, required this.onTap, required this.onDelete});
 
   @override
+  State<_ClipCard> createState() => _ClipCardState();
+}
+
+class _ClipCardState extends State<_ClipCard> {
+  Uint8List? _thumb;
+  String? _thumbUrl;
+  bool _thumbLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadThumbnail();
+  }
+
+  Future<void> _loadThumbnail() async {
+    if (widget.clip.isCloudSynced) {
+      final url = await ApiService().getClipStreamUrl(widget.clip.id);
+      if (mounted) setState(() { _thumbUrl = url; _thumbLoading = false; });
+    } else {
+      final bytes = await ApiService().getClipImage(widget.clip.id);
+      if (mounted) {
+        setState(() {
+          _thumb = bytes != null ? Uint8List.fromList(bytes) : null;
+          _thumbLoading = false;
+        });
+      }
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: onTap,
+      onTap: widget.onTap,
       child: Container(
         decoration: BoxDecoration(
           color: AppTheme.surfaceColor,
@@ -262,12 +295,29 @@ class _ClipCard extends StatelessWidget {
                 child: Stack(
                   fit: StackFit.expand,
                   children: [
-                    Container(
-                      color: const Color(0xFF0A1420),
-                      child: const Center(
-                        child: Text('🎬', style: TextStyle(fontSize: 28)),
+                    if (_thumbLoading)
+                      const ColoredBox(
+                        color: Color(0xFF0A1420),
+                        child: Center(
+                          child: SizedBox(
+                            width: 16, height: 16,
+                            child: CircularProgressIndicator(
+                              color: AppTheme.accentColor, strokeWidth: 1.5,
+                            ),
+                          ),
+                        ),
+                      )
+                    else if (_thumb != null)
+                      Image.memory(_thumb!, fit: BoxFit.cover)
+                    else if (_thumbUrl != null)
+                      Image.network(_thumbUrl!, fit: BoxFit.cover)
+                    else
+                      const ColoredBox(
+                        color: Color(0xFF0A1420),
+                        child: Center(
+                          child: Text('🎬', style: TextStyle(fontSize: 28)),
+                        ),
                       ),
-                    ),
                     Positioned(
                       bottom: 5, right: 6,
                       child: Container(
@@ -277,7 +327,7 @@ class _ClipCard extends StatelessWidget {
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Text(
-                          clip.formattedDuration,
+                          widget.clip.formattedDuration,
                           style: const TextStyle(
                             fontFamily: 'JetBrains Mono',
                             fontSize: 8, color: Colors.white70,
@@ -285,7 +335,7 @@ class _ClipCard extends StatelessWidget {
                         ),
                       ),
                     ),
-                    if (clip.isCloudSynced)
+                    if (widget.clip.isCloudSynced)
                       const Positioned(
                         top: 5, right: 6,
                         child: Icon(Icons.cloud_done,
@@ -303,19 +353,19 @@ class _ClipCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    DateFormat('hh:mm a').format(clip.timestamp),
+                    DateFormat('hh:mm a').format(widget.clip.timestamp),
                     style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w700),
                   ),
                   const SizedBox(height: 1),
                   Text(
-                    '${clip.formattedSize} · ${clip.resolution}',
+                    '${widget.clip.formattedSize} · ${widget.clip.resolution}',
                     style: const TextStyle(
                       fontFamily: 'JetBrains Mono',
                       fontSize: 8, color: AppTheme.muted2Color,
                     ),
                   ),
                   const SizedBox(height: 5),
-                  _EventTag(type: clip.eventType),
+                  _EventTag(type: widget.clip.eventType),
                 ],
               ),
             ),

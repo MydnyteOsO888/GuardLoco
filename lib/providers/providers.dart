@@ -200,7 +200,7 @@ class WebRtcConnectionNotifier extends StateNotifier<WebRtcConnectionState> {
   }
 
   Future<void> disconnect() async {
-    await _ref.read(webRtcServiceProvider).dispose();
+    await _ref.read(webRtcServiceProvider).disconnect();
     state = WebRtcConnectionState.idle;
   }
 }

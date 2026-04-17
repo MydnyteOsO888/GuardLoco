@@ -1,10 +1,12 @@
 from fastapi import APIRouter, Depends, HTTPException, Header
+from fastapi.responses import Response
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Optional
+import httpx
 
 from ..db.database import get_db
 from ..db import crud
-from ..core.dependencies import get_current_user
+from ..core.dependencies import get_current_user, verify_jwt_only
 from ..core.config import settings
 from ..schemas.schemas import (
     DeviceStatusResponse, ArmRequest, FCMTokenRequest,
@@ -125,3 +127,19 @@ async def update_fcm_token(
 async def ping():
     """Health check endpoint."""
     return {"status": "ok", "service": "CarGuard API"}
+
+
+@router.get("/snapshot")
+async def snapshot(_: str = Depends(verify_jwt_only)):
+    """Return latest JPEG — from MJPEG stream cache if available, else direct ESP32 fetch."""
+    from ..main import frame_cache, esp32_client
+    if frame_cache is not None:
+        return Response(content=frame_cache, media_type="image/jpeg")
+    # Cache not ready yet (MJPEG reader still connecting) — fall back to direct fetch
+    try:
+        resp = await esp32_client.get("/snapshot")
+        if resp.status_code == 200:
+            return Response(content=resp.content, media_type="image/jpeg")
+        raise HTTPException(status_code=502, detail="ESP32 snapshot failed")
+    except httpx.RequestError:
+        raise HTTPException(status_code=503, detail="ESP32 unreachable")

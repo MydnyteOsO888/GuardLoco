@@ -123,14 +123,19 @@ class WebRtcService {
   Stream<RTCPeerConnectionState> get connectionState =>
       _connectionStateController.stream;
 
-  // ── Dispose ───────────────────────────────────────────────
-  Future<void> dispose() async {
+  // ── Disconnect (keeps stream controllers alive for reconnect) ─
+  Future<void> disconnect() async {
     _icePollTimer?.cancel();
     _receivedCandidates.clear();
     await _remoteStream?.dispose();
     await _peerConnection?.close();
     _peerConnection = null;
     _remoteStream = null;
+  }
+
+  // ── Dispose ───────────────────────────────────────────────
+  Future<void> dispose() async {
+    await disconnect();
     await _remoteStreamController.close();
     await _connectionStateController.close();
   }

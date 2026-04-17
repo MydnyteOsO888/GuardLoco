@@ -9,6 +9,13 @@ from ..db import crud
 bearer_scheme = HTTPBearer()
 
 
+async def verify_jwt_only(
+    credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme),
+) -> str:
+    """Validate JWT without a DB lookup — returns user_id. Use for high-frequency endpoints."""
+    return verify_access_token(credentials.credentials)
+
+
 async def get_current_user(
     credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme),
     db: AsyncSession = Depends(get_db),

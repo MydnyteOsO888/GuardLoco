@@ -1,15 +1,18 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile, File, Header
+from fastapi.responses import FileResponse, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Optional
 import tempfile, os, shutil
+from pathlib import Path
 
 from ..db.database import get_db
 from ..db import crud
 from ..db.models import EventType
-from ..core.dependencies import get_current_user
+from ..core.dependencies import get_current_user, verify_jwt_only
 from ..core.config import settings
 from ..schemas.schemas import ClipResponse, ClipStreamUrlResponse
 from ..services.s3_service import generate_presigned_url, upload_clip, delete_clip as s3_delete, build_s3_key
+from ..services.local_storage_service import get_clip_path, delete_local_clip
 
 router = APIRouter(prefix="/clips", tags=["Video Clips"])
 
@@ -42,11 +45,9 @@ async def get_stream_url(
         raise HTTPException(status_code=404, detail="Clip not found")
 
     if clip.s3_key:
-        # Cloud clip — generate presigned S3 URL
         url = await generate_presigned_url(clip.s3_key)
     elif clip.local_path:
-        # Local clip on ESP32 SD card — proxy through our /stream endpoint
-        url = f"{settings.esp32_base_url}/clips/{clip_id}/stream"
+        url = f"/api/v1/clips/{clip.id}/serve"
     else:
         raise HTTPException(status_code=404, detail="Clip file not found")
 
@@ -109,22 +110,39 @@ async def upload_clip_from_device(
         os.unlink(tmp_path)
 
 
+@router.get("/{clip_id}/serve")
+async def serve_clip(
+    clip_id: str,
+    db: AsyncSession = Depends(get_db),
+    user_id: str = Depends(verify_jwt_only),
+):
+    """Serve a locally stored clip JPEG directly."""
+    clip = await crud.get_clip_by_id(db, clip_id, user_id)
+    if not clip:
+        raise HTTPException(status_code=404, detail="Clip not found")
+    if not clip.local_path:
+        raise HTTPException(status_code=404, detail="No local file for this clip")
+    path = Path(clip.local_path)
+    if not path.exists():
+        raise HTTPException(status_code=404, detail="Clip file not found")
+    return FileResponse(str(path), media_type="image/jpeg")
+
+
 @router.delete("/{clip_id}")
 async def delete_clip(
     clip_id: str,
     db: AsyncSession = Depends(get_db),
     current_user=Depends(get_current_user),
 ):
-    """Delete a clip from DB and S3."""
+    """Delete a clip from DB, S3, and local storage."""
     clip = await crud.get_clip_by_id(db, clip_id, current_user.id)
     if not clip:
         raise HTTPException(status_code=404, detail="Clip not found")
 
-    # Delete from S3 if present
     if clip.s3_key:
         await s3_delete(clip.s3_key)
+    if clip.local_path:
+        await delete_local_clip(clip_id)
 
-    # Delete from DB
     await crud.delete_clip(db, clip_id, current_user.id)
-
     return {"status": "deleted"}

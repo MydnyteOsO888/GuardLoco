@@ -69,8 +69,8 @@ class ApiService {
       'email': email,
       'password': password,
     });
-    await _storage.write(key: 'jwt_token', value: resp.data['access_token']);
-    await _storage.write(key: 'refresh_token', value: resp.data['refresh_token']);
+    await _storage.write(key: 'jwt_token', value: resp.data['accessToken']);
+    await _storage.write(key: 'refresh_token', value: resp.data['refreshToken']);
     final user = AppUser.fromJson(resp.data['user']);
     await _storage.write(key: 'current_user', value: jsonEncode(resp.data['user']));
     return user;
@@ -85,7 +85,7 @@ class ApiService {
       final refresh = await _storage.read(key: 'refresh_token');
       if (refresh == null) return false;
       final resp = await _dio.post('/auth/refresh', data: {'refresh_token': refresh});
-      await _storage.write(key: 'jwt_token', value: resp.data['access_token']);
+      await _storage.write(key: 'jwt_token', value: resp.data['accessToken']);
       return true;
     } catch (_) {
       return false;
@@ -96,6 +96,21 @@ class ApiService {
   Future<DeviceStatus> getDeviceStatus() async {
     final resp = await _dio.get('/device/status');
     return DeviceStatus.fromJson(resp.data);
+  }
+
+  Future<List<int>?> getSnapshot() async {
+    try {
+      final resp = await _dio.get<List<int>>(
+        '/device/snapshot',
+        options: Options(
+          responseType: ResponseType.bytes,
+          receiveTimeout: const Duration(seconds: 5),
+        ),
+      );
+      return resp.data;
+    } catch (_) {
+      return null;
+    }
   }
 
   Future<void> setArmed(bool armed) async {
@@ -172,10 +187,21 @@ class ApiService {
         .toList();
   }
 
-  /// Returns a signed streaming URL (AWS S3 presigned or local)
   Future<String> getClipStreamUrl(String clipId) async {
     final resp = await _dio.get('/clips/$clipId/stream-url');
     return resp.data['url'] as String;
+  }
+
+  Future<List<int>?> getClipImage(String clipId) async {
+    try {
+      final resp = await _dio.get<List<int>>(
+        '/clips/$clipId/serve',
+        options: Options(responseType: ResponseType.bytes),
+      );
+      return resp.data;
+    } catch (_) {
+      return null;
+    }
   }
 
   Future<void> deleteClip(String clipId) async {

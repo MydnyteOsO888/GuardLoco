@@ -1,11 +1,21 @@
-from pydantic import BaseModel, EmailStr, field_validator
+from pydantic import BaseModel, ConfigDict, EmailStr, field_validator
+from pydantic.alias_generators import to_camel
 from typing import Optional
 from datetime import datetime
 from ..db.models import EventType
 
 
+class CamelModel(BaseModel):
+    """Base for all API response/request models — serialises to camelCase."""
+    model_config = ConfigDict(
+        alias_generator=to_camel,
+        populate_by_name=True,
+        from_attributes=True,
+    )
+
+
 # ── Auth ─────────────────────────────────────────────────
-class RegisterRequest(BaseModel):
+class RegisterRequest(CamelModel):
     email: EmailStr
     password: str
     display_name: Optional[str] = None
@@ -17,25 +27,24 @@ class RegisterRequest(BaseModel):
             raise ValueError("Password must be at least 8 characters")
         return v
 
-class LoginRequest(BaseModel):
+class LoginRequest(CamelModel):
     email: EmailStr
     password: str
 
-class RefreshRequest(BaseModel):
+class RefreshRequest(CamelModel):
     refresh_token: str
 
-class TokenResponse(BaseModel):
+class TokenResponse(CamelModel):
     access_token: str
     refresh_token: str
     token_type: str = "bearer"
 
-class UserResponse(BaseModel):
+class UserResponse(CamelModel):
     id: str
     email: str
     display_name: Optional[str]
-    class Config: from_attributes = True
 
-class LoginResponse(BaseModel):
+class LoginResponse(CamelModel):
     access_token: str
     refresh_token: str
     token_type: str = "bearer"
@@ -43,21 +52,20 @@ class LoginResponse(BaseModel):
 
 
 # ── FCM ───────────────────────────────────────────────────
-class FCMTokenRequest(BaseModel):
+class FCMTokenRequest(CamelModel):
     token: str
 
 
 # ── Events ────────────────────────────────────────────────
-class EventResponse(BaseModel):
+class EventResponse(CamelModel):
     id: str
     type: EventType
     timestamp: datetime
     clip_id: Optional[str]
     sensor_value: Optional[float]
     is_read: bool
-    class Config: from_attributes = True
 
-class AlertPayload(BaseModel):
+class AlertPayload(CamelModel):
     """Sent by ESP32 when an event is detected."""
     event_type: EventType
     sensor_value: Optional[float] = None
@@ -65,7 +73,7 @@ class AlertPayload(BaseModel):
 
 
 # ── Clips ─────────────────────────────────────────────────
-class ClipResponse(BaseModel):
+class ClipResponse(CamelModel):
     id: str
     event_id: Optional[str]
     event_type: EventType
@@ -74,31 +82,28 @@ class ClipResponse(BaseModel):
     file_size_bytes: int
     resolution: str
     is_cloud_synced: bool
-    class Config: from_attributes = True
 
-class ClipStreamUrlResponse(BaseModel):
+class ClipStreamUrlResponse(CamelModel):
     url: str
     expires_in: int
 
 
 # ── Device ────────────────────────────────────────────────
-class StorageInfo(BaseModel):
+class StorageInfo(CamelModel):
     total_bytes: int
     used_bytes: int
     video_bytes: int
     logs_bytes: int
-    class Config: from_attributes = True
 
-class SensorReadingResponse(BaseModel):
+class SensorReadingResponse(CamelModel):
     vibration_g: float
     motion_detected: bool
     ultrasonic_meters: float
     temperature_c: float
     wifi_rssi: int
     timestamp: datetime
-    class Config: from_attributes = True
 
-class DeviceStatusResponse(BaseModel):
+class DeviceStatusResponse(CamelModel):
     is_online: bool
     is_armed: bool
     ip_address: str
@@ -108,12 +113,11 @@ class DeviceStatusResponse(BaseModel):
     wifi_rssi: int
     storage: StorageInfo
     latest_reading: Optional[SensorReadingResponse] = None
-    class Config: from_attributes = True
 
-class ArmRequest(BaseModel):
+class ArmRequest(CamelModel):
     armed: bool
 
-class DeviceHeartbeat(BaseModel):
+class DeviceHeartbeat(CamelModel):
     """ESP32 sends this periodically."""
     ip_address: str
     firmware_version: str
@@ -132,22 +136,22 @@ class DeviceHeartbeat(BaseModel):
 
 
 # ── WebRTC ────────────────────────────────────────────────
-class SDPOffer(BaseModel):
+class SDPOffer(CamelModel):
     sdp: str
     type: str
 
-class SDPAnswer(BaseModel):
+class SDPAnswer(CamelModel):
     sdp: str
     type: str
 
-class ICECandidate(BaseModel):
+class ICECandidate(CamelModel):
     candidate: str
     sdp_mid: str
     sdp_m_line_index: int
 
 
 # ── Settings ──────────────────────────────────────────────
-class SettingsResponse(BaseModel):
+class SettingsResponse(CamelModel):
     resolution: str
     fps: int
     night_vision: bool
@@ -161,9 +165,8 @@ class SettingsResponse(BaseModel):
     auto_delete: bool
     clip_length: int
     encryption: bool
-    class Config: from_attributes = True
 
-class SettingsUpdateRequest(BaseModel):
+class SettingsUpdateRequest(CamelModel):
     resolution: Optional[str] = None
     fps: Optional[int] = None
     night_vision: Optional[bool] = None
